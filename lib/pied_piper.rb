@@ -17,14 +17,20 @@ class PiedPiper
     obj ||= yield
     return @object if obj == :end
 
-    result = case obj
-             when Symbol
-               @object.send(obj, *args)
-             when Proc
-               obj.call(@object, *args)
-             when Method
-               obj.call(@object, *args)
-             end
-    PiedPiper.new(result)
+    piped_obj = result(obj, *args)
+    PiedPiper.new(piped_obj)
+  end
+
+  private
+
+  def result(obj, *args)
+    case obj
+    when Symbol
+      @object.send(obj, *args)
+    when Proc
+      obj.call(@object, *args)
+    when Method
+      obj.call(@object, *args)
+    end
   end
 end
