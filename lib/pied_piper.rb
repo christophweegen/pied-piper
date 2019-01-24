@@ -1,4 +1,5 @@
 require 'pied_piper/version'
+require 'pied_piper/kernel'
 
 class PiedPiper
   def initialize(obj = nil)
