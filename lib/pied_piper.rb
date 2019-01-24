@@ -1,20 +1,22 @@
-require "pied_piper/version"
+require 'pied_piper/version'
 
 class PiedPiper
-  def initialize(obj = nil, &blk)
+  def initialize(obj = nil)
     if !obj.nil? && block_given?
-      raise "Initialize only with parameter OR block, not both!"
+      raise 'Initialize only with parameter OR block, not both!'
     end
 
-    @object = obj || blk.call
+    @object = obj || yield
   end
 
-  def |(obj, *args, &blk)
+  def |(obj, *args)
     if !obj.nil? && block_given?
-      raise "Initialize only with parameter OR block, not both!"
+      raise 'Initialize only with parameter OR block, not both!'
     end
-    obj = obj || blk.call
+
+    obj ||= yield
     return @object if obj == :end
+
     result = case obj
              when Symbol
                @object.send(obj, *args)
