@@ -1,37 +1,39 @@
 require 'pied_piper/version'
 require 'pied_piper/kernel'
+require 'pry'
 
 class PiedPiper
-  def initialize(obj = nil)
-    if !obj.nil? && block_given?
-      raise 'Initialize only with parameter OR block, not both!'
-    end
+  class EndOfPipe; end
+  attr_reader :object
 
-    @object = obj || yield
+  def initialize(object)
+    @object = object
   end
 
-  def |(obj, *args)
-    if !obj.nil? && block_given?
-      raise 'Initialize only with parameter OR block, not both!'
-    end
+  def end
+    EndOfPipe
+  end
 
-    obj ||= yield
-    return @object if obj == :end
+  def |(function)
+    return object if function == EndOfPipe
 
-    piped_obj = result(obj, *args)
-    PiedPiper.new(piped_obj)
+    piped_result = result(function)
+    PiedPiper.new(piped_result)
   end
 
   private
 
-  def result(obj, *args)
-    case obj
+  def result(function)
+    case function
     when Symbol
-      @object.send(obj, *args)
+      @object.send(function)
+    when Array
+      meth, *args = function
+      @object.send(meth, *args)
     when Proc
-      obj.call(@object, *args)
+      function.call(@object, *args)
     when Method
-      obj.call(@object, *args)
+      function.call(@object, *args)
     end
   end
 end
