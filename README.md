@@ -105,13 +105,13 @@ An Object of `Proc` class which takes exactly one parameter:
 ```ruby
 p = pipe("Hypnotized child")
 
-no_happy_end = ->(child) { child + " was never seen again" }
+no_happy_end = ->(child) { child + " was never seen again..." }
 
 p | no_happy_end | p.end
-# => "Hypnotized child was never seen again"
+# => "Hypnotized child was never seen again..."
 ```
 
-### Method Object Pipe
+### Method Object Pipes
 
 An object of the `Method` class, where the piped object will be used as the first parameter. You can pass an Array if you need additional parameters:
 
@@ -126,10 +126,10 @@ p = pipe("You")
 hypnotize = PiedPiperOfHamelin.method(:plays_song_on_pipe)
 
 p | hypnotize | p.end
-# => "You feel already slightly hypnotized!"
+# => "You already feel slightly hypnotized!"
 
 p | [hypnotize, "VERY"] | p.end
-# => "You feel already VERY hypnotized!"
+# => "You already feel VERY hypnotized!"
 ```
 
 ### Combining Pipes
@@ -142,7 +142,7 @@ lures = [:+, " feel"]
 you = ->(str) { str + " hypnotized!" }
 away = :upcase
 
-piper | lures | you | away | h.end
+piper | lures | you | away | piper.end
 # => "YOU FEEL HYPNOTIZED!"
 ```
 
