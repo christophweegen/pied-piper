@@ -1,5 +1,4 @@
 require 'pied_piper/version'
-require 'pry'
 
 class PiedPiper
   class EndOfPipe; end
