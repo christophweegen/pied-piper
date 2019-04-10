@@ -1,5 +1,4 @@
 require 'pied_piper/version'
-require 'pied_piper/kernel'
 require 'pry'
 
 class PiedPiper
@@ -29,7 +28,12 @@ class PiedPiper
       @object.send(function)
     when Array
       meth, *args = function
-      @object.send(meth, *args)
+      case meth
+      when Symbol
+        @object.send(meth, *args)
+      when Method
+        meth.call(@object, *args)
+      end
     when Proc
       function.call(@object, *args)
     when Method
