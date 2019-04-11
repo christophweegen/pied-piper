@@ -26,12 +26,18 @@ class PiedPiper
     when Symbol
       @object.send(function)
     when Array
-      meth, *args = function
-      case meth
+      method, *args, blk = function
+      case method
+
       when Symbol
-        @object.send(meth, *args)
+        case blk
+        when Proc
+          @object.send(method, *args, &blk)
+        else
+          @object.send(method, *args, blk)
+        end
       when Method
-        meth.call(@object, *args)
+        method.call(@object, *args)
       end
     when Proc
       function.call(@object, *args)

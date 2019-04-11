@@ -1,55 +1,72 @@
+require 'pied_piper/kernel'
+
 RSpec.describe PiedPiper do
-  let(:piper) { described_class }
-
-  class MyClass
-    def self.bangify(string)
-      string + '!!!'
-    end
-  end
-
-  it 'pipes things through' do
-    p = PiedPiper.new('h')
-    meth = :upcase # pipess through method on given object
-    meth_with_params = [:concat, 'el', 'lo'] # methods with arbitrary params
-    prc = ->(str) { str + " world" } # objects of Proc class
-    meth_obj = MyClass.method(:bangify)
-    result = p | meth | meth_with_params | prc | meth_obj | p.end
-    expect(result).to eq("Hello world!!!")
-  end
+  include PiedPiper::Kernel
 
   it 'has a version number' do
     expect(PiedPiper::VERSION).not_to be nil
   end
 
-  # describe 'can be initialized' do
-  # it 'with obj' do
-  # result = piper.call('test')
-  # expect(result.class).to be(PiedPiper)
-  # end
+  describe "String pipes" do
+    it "can pipe and terminate" do
+      p = piper("foo")
 
-  # it 'with block' do
-  # result = piper.call { 'test' }
-  # expect(result.class).to be(PiedPiper)
-  # end
+      a = p | :upcase | p.end
+      b = p | :upcase | PiedPiper::EndOfPipe
+      c = p | :upcase | p_end
 
-  # context 'with proc as' do
-  # it 'proc' do
-  # p = proc { 'test' }
-  # result = piper.call(p)
-  # expect(result.class).to be(PiedPiper)
-  # end
+      expect(a).to eq("FOO")
+      expect(b).to eq("FOO")
+      expect(c).to eq("FOO")
+    end
+  end
 
-  # it 'lambda' do
-  # p = -> { 'test' }
-  # result = piper.call p
-  # expect(result.class).to be(PiedPiper)
-  # end
+  describe "Array pipes" do
+    it "with one parameters" do
+      p = piper("Pied")
+      concat = [:concat, " Piper"]
+      result = p | concat | p.end
 
-  # it 'stabby lambda' do
-  # p = -> { 'test' }
-  # result = piper.call p
-  # expect(result.class).to be(PiedPiper)
-  # end
-  # end
-  # end
+      expect(result).to eq("Pied Piper")
+    end
+
+    it "with multiple parameters" do
+      p = piper("Pied Piper")
+      concat = [:concat, " of", " Hamelin"]
+      result = p | concat | p.end
+
+      expect(result).to eq("Pied Piper of Hamelin")
+    end
+
+    it "with block" do
+      p = piper("Pied Piper")
+
+      map_double = [:map, ->(str) { str * 2 }]
+      result = p | :split | map_double | :join | p_end
+      # => "PiedPiedPiperPiper"
+
+      expect(result).to eq("PiedPiedPiperPiper")
+    end
+
+    it "with parameters and block" do
+      p = piper("Pied Piper")
+
+      map_double_array = [:each_with_object, [], ->(str, array) { array << [str * 2] }]
+      result = p | :split | map_double_array | p_end
+
+      expect(result).to eq([["PiedPied"], ["PiperPiper"]])
+    end
+  end
+
+  describe "with Proc" do
+    it "with one parameter" do
+      p = piper("Pied")
+
+      concat = ->(x) { x + " Piper" }
+
+      result = p | concat | p.end
+
+      expect(result).to eq("Pied Piper")
+    end
+  end
 end

@@ -154,7 +154,7 @@ puts self
 puts "foo"
 ```
 
-But this doesn't, since we call it on an explicit receiver:
+... but this doesn't, since we called `puts`  on an explicit receiver:
 
 ```ruby
 # explicit receiver/self for puts
@@ -162,9 +162,13 @@ self.puts "foo"
 # => NoMethodError: private method `puts' called for main:Object
 ```
 
-So if you want to provide functionality that's available everywhere like `puts` but cannot be called on an object, the usual approach is to define a private instance method on Kernel.
+So if you want to provide functionality that's available everywhere like `puts`, but cannot be called on an object, the usual approach is to define a private instance method on Kernel.
 
 That's what has been done with the `piper` and `p_end` methods and can be seen in the source [here](https://github.com/christophweegen/pied-piper/blob/master/lib/pied_piper/kernel.rb) :-)
+
+Just a bit of background information, in case you're curious how this gem was implemented.
+
+But back to usage...
 
 ### Array Pipes
 
@@ -177,6 +181,26 @@ concat = [:concat, " of", " Hamelin"]
 
 p | concat  | p.end
 # => "Pied Piper of Hamelin"
+```
+
+If the first array element is a Symbol and the last is an object of class `Proc`, we can also use methods which accept blocks:
+
+```ruby
+p = piper("Pied Piper")
+
+map_double = [:map, ->(str) { str * 2 }]
+p | :split | map_double | :join | p_end
+# => "PiedPiedPiperPiper"
+```
+
+It's also possible to use methods with arguments and blocks, arguments have to between the method name (first element of the array) and the last element of the array which is a block:
+
+```ruby
+p = piper("Pied Piper")
+
+map_double_array = [:each_with_object, [], ->(str, array) { |str| array << [str * 2]}]
+p | :split | map_double_array | p_end
+# => [["PiedPied"], ["PiperPiper"]]
 ```
 
 ### Proc Object Pipes
