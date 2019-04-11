@@ -2,7 +2,13 @@
 
 This gem provides "Unix-like" pipe functionality in Ruby.
 
-The inspiration for this gem were `|>` pipes and functional programming in [Elixir](https://elixir-lang.org).
+The inspiration for this gem were `|>` pipes and functional programming in [Elixir](https://elixir-lang.org) and another motivation was documenting my findings about Ruby, functional programming and implementing pipe-like behaviour in Ruby.
+
+Personally I like to read `README`s of gems, which provide a lot of insights how things we're implemented and the possible pitfalls, because it's always a possibility to learn, by what others have done.
+
+So I included the things I considered important while working on this gem.
+
+This is maybe a lot more information that's needed to use this gem, but maybe it helps to understand, why I implemented it the way I did and gives you a deeper insight into pipes in Ruby, in case you want to implement your own piping gem :-)
 
 After trying to introduce the same `|>` pipe operator in Ruby, which I found out isn't possible due to syntactic reasons ( without hacking the underlying C code ), I settled for another well-known pipe operator, the `|` Unix pipe operator.
 
@@ -44,9 +50,11 @@ require "pied_piper"
 p = PiedPiper.new("rats and kids")
 ```
 
+## Shortcut
+
 A shortcut to get a piper object anywhere you want, is shown in the following example. Only use this if your name is "Chuck Norris of Hamelin", since it "roundhouse pipes" (monkey-patches) Ruby's `Kernel` module :-D
 
-Note: It only adds the `piper` method to `Kernel` which isn't defined anywhere else and doesn't change existing Ruby behaviour, so using it doesn't actually make you this badass ;-)
+Note: It only adds the `piper` method to `Kernel`, and a `piper` method isn't already defined above `Kernel` in the inheritance hierarchy ( where only `BasicObject` is located ) so no existing Ruby behaviour actually gets altered. More on that later.
 
 ```ruby
 require 'pied_piper/kernel'
@@ -86,9 +94,11 @@ p | :upcase | :reverse | p.end
 
 Note: Since "piping" is not a native Ruby syntax feature, rather than a method call in disguise (e.g: `"foo".|(:upcase)`), the underlying `PiedPiper` class, which wraps the initial object (e.g: `"foo"`) and on which the pipe functionality is called, is just a wrapper for the initial object which handles piping logic.
 
-Everytime you transformed an object through a pipe you create a new object of class `PiedPiper`, which wraps the mutated inital object again (e.g: from `"foo"` to `"FOO"`).
+Everytime you transform an object through a pipe, there's a new object of class `PiedPiper` created, which wraps the __transformed__ inital object again (e.g: from `"foo"` to `"FOO"`).
 
-This way, we can build pipe-chains of arbitrary length, but at the end of each pipe-chain, the piped object has to be "unwrapped" again by some kind of "terminator" object.
+Note the stress on "transformed", since if we want to programm in functional style we shouldn't mutate objects in place, rather than always returning a new object, without mutating the initial one.
+
+By always returning a new object wrapped in an object of class `PiedPiper` we can build pipe-chains of arbitrary length, but at the end of each pipe-chain, the wrapped object has to be "unwrapped" again by some kind of "terminator" object.
 
 This happens by "terminating" the pipe-chain with the `.end` method, which is defined on every piped object, or by just writing `PiedPiper::EndOfPipe` or if you have required `pied_piper/kernel` you can just write `p_end`.
 
@@ -135,15 +145,19 @@ Object.ancestors
 # => [Object, Kernel, BasicObject]
 ```
 
-Since Object `includes Kernel`, `Kernel` follows after `Object`.
+Since Object `includes Kernel`, `Kernel` follows after `Object` in the ancestors array.
 
-If `Object` would `prepend Kernel`, `Kernel` would be before `Object`.
+If `Object` would `prepend Kernel`, `Kernel` would be before `Object` in the ancestors array.
+
+The order of included/prepended modules has implications on the method lookup, since methods defined in modules further down the inheritance hierarchy overwrite methods higher up.
+
+This is why methods in a prepended module overwrite methods defined in a class while methods in included modules don't.
 
 Methods who are intended to be globally available, like `puts` and `gets`, and who aren't intended to be available with an explicit receiver like `"foo".puts` are defined as private instance methods on `Kernel`.
 
-All private instance methods can only be called with an implicit receiver (implicit self) in Ruby.
+All private instance methods can only be called with an implicit receiver (implicit `self`) in Ruby.
 
-That's why things like this work with an implicit receiver/self, because were always "inside" an object:
+That's why things like this work with an implicit receiver/`self`, because we're always "inside" an object:
 
 ```ruby
 puts self
@@ -154,7 +168,7 @@ puts self
 puts "foo"
 ```
 
-... but this doesn't, since we called `puts`  on an explicit receiver:
+... but this doesn't, since we called `puts` on an explicit receiver:
 
 ```ruby
 # explicit receiver/self for puts
@@ -166,7 +180,27 @@ So if you want to provide functionality that should be available everywhere like
 
 That's what has been done with the `piper` and `p_end` methods and can be seen in the source [here](https://github.com/christophweegen/pied-piper/blob/master/lib/pied_piper/kernel.rb) :-)
 
-Just a bit of background information, in case you're curious how this gem was implemented.
+If your newly defined method on `Kernel` isn't overriding anything in `BasicObject` above, you should be able to freely add any number of new global methods (also public methods) to Ruby, without changing any existing functionality.
+
+This is usually the only "sensible" way of monkey-patching core classes. Only adding, not altering methods.
+
+Since everything inherits from `Object` ( and thus from `Kernel` ) in Ruby, classes or modules who have a method with the same name will simply "clobber" it with their own implementation.
+
+In case of a collision ( for example if another gem monkey-patches the same method as you do ) you have to be a bit creative to find a non-colliding method name, or just don't use too many gems who monkey-patch things, or don't use any monkey-patching at all, since monkey-patching is usually frowned upon :-)
+
+Problems could arise, because adding methods is still monkey-patching though (opening up existing classes again), if two gems would define the same new method on `Kernel`, so adding new methods to `Kernel` should be used sparse or better avoided at all.
+
+Additionally what if future versions of Ruby include a `piper` method in `Kernel` or even in `BasicObject`?
+
+Then monkey-patching these methods would introduce a lot of problems for sure :-)
+
+That's why there's the "official" `PiedPiper` class, and the `piper` `Kernel` method only for optional convenience.
+
+Just a bit of background information, in case you're curious how this gem was implemented or if want to implement your own piping gem by introducing monkey-patching to avoid the "pipe terminator" at the end.
+
+Maybe you have a better idea how to implement this without a "pipe terminator" AND avoid monkey-patching.
+
+But for now, I consider monkey-patching as cheating in order to avoid the "pipe terminator" :-D
 
 But back to usage...
 
@@ -211,6 +245,8 @@ An Object of `Proc` class which takes exactly one parameter:
 - `lambda { |kid| ... }`
 - `->(kid) { ... }`
 
+Procs in Ruby are essentially what is called an anonymous function or lambda in other languages.
+
 ```ruby
 p = piper("Hypnotized kid")
 
@@ -251,7 +287,7 @@ lures = [:+, " feel"]
 you = ->(str) { str + " hypnotized!" }
 away = :upcase
 
-p | lures | you | away | piper.end
+p | lures | you | away | p.end
 # => "YOU FEEL HYPNOTIZED!"
 ```
 
@@ -273,7 +309,7 @@ p \
   | lures \
   | you \
   | away \
-  | h.end
+  | p.end
 # => "YOU FEEL HYPNOTIZED!"
 ```
 
@@ -291,19 +327,21 @@ p
   .|(lures)
   .|(you)
   .|(away).
-  .|(h.end)
+  .|(p.end)
 # => "YOU FEEL HYPNOTIZED!"
 ```
 
 ### What kind of advantages can pipes offer?
 
-Actually we can do nothing else with pipes then we can also do with regular Ruby syntax ( since it only builds on already existing Ruby functionality and is not a totally new language feature ).
+Actually we can't do anything else with pipes that we can't do with regular Ruby syntax too ( since they only build on already existing Ruby functionality and are not a totally new language feature ).
 
 But piping objects can make some operations more clear/readable because we go from left to right in a linear fashion, instead from inside to outside like in regular function calls.
 
 This offers advantages when for example working in "functional style" instead of using methods:
 
 ```ruby
+require 'pied_piper/kernel'
+
 class Foo
   def self.one
     -> {|x| ... }
@@ -326,11 +364,17 @@ end
 
 Baz.three.call(Bar.two.call(Foo.one.call(x)))
 
+# or this
+
+foo = Foo.one.call(x)
+bar = Bar.two.call(foo)
+Baz.three.call(bar)
+
 # becomes this
 
 piper(x) | Foo.one | Bar.two | Baz.three | p_end
 
-# or
+# or this
 
 piper(x) \
   | Foo.one \
@@ -339,15 +383,23 @@ piper(x) \
   | p_end
 ```
 
-I guess you won't use these kind of functional programming in Ruby too often, since Ruby follows another philosophy.
+I guess you won't use these kind of functional programming in Ruby too often, since Ruby follows the philosophy of Object Oriented Programming of sending messages to objects ( i.e: calling methods on objects ) like: `obj.message`
 
-PiedPiper is more a kind of experiment how Ruby can be modified to resemble concepts used in other programming languages like for example [Elixir](https://elixir-lang.org).
+PiedPiper is more a kind of experiment how Ruby can be modified to resemble concepts used in other programming languages like for example functional programming in [Elixir](https://elixir-lang.org) and to personally document my findings about Ruby and functional programming.
 
-As far as I can judge Ruby does quite a good job, the flexible language constructs that Ruby has to offer, makes it one of the nicest programming languages to work with. :-)
+As far as I can judge Ruby does quite a good job, the flexible language constructs that Ruby has to offer, makes it still one of the nicest programming languages to work with. :-)
+
+Since Ruby unites multiple programming paradigms, functional programming is one of them too:
+
+The functional features Ruby has to offer for example are:
+
+- Module/Class methods like `Foo.bar(baz)`, similar to Elixir's functions which are defined in modules too: `Foo.bar(baz)`
+- Callable objects like objects of `Proc` or `Method` class.
+- Blocks which can also be converted to `Proc` objects in the method signature by defining a last `&blk` parameter  ( its the `&` which converts the block into a `Proc` object, which can then be called with `blk.call` in the method body ).
 
 What other kind of good use cases for pipes can you come up with?
 
-If you know some ( or missing features ), feel free to open up a pull request, so we can augment code/documentation :-)
+If you know some, feel free to open up a pull request, so we can augment code or documentation :-)
 
 ## Development
 
