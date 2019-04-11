@@ -1,10 +1,10 @@
 module PiedPiper::Kernel
   ::Kernel.class_eval do
-    def pipe(obj = nil)
+    def piper(obj)
       PiedPiper.new(obj)
     end
 
-    def pipe_end
+    def p_end
       PiedPiper::EndOfPipe
     end
   end
