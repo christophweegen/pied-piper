@@ -60,7 +60,7 @@ Our initial object (e.g: `"rats and kids"`), is passed around through each pipe 
 
 ### Symbol/String Pipes
 
-1. A Symbol or String, this calls a method on the piped object with the same name:
+The easiest way to create a pipe is using symbols or strings.  This will call the method with the same name as the Symbol/String on the wrapped object:
 
 ```ruby
 p = piper("rats and kids")
@@ -69,7 +69,11 @@ p | :upcase | p.end
 # => "RATS AND KIDS"
 ```
 
-Pipes can be chained:
+More about `p.end` below.
+
+### Chaining Pipes
+
+Pipes can be chained of course:
 
 ```ruby
 p = piper("rats and kids")
@@ -80,11 +84,13 @@ p | :upcase | :reverse | p.end
 
 ### Ending Pipes
 
-Note: Since "piping" is not a native Ruby syntax feature, rather than a method call in disguise (e.g: `p.|(:upcase)`), the underlying `PiedPiper` class, which wraps the initial object (e.g: `"foo"`) and on which the pipe functionality is called, is just a wrapper for the initial object which handles piping logic.
+Note: Since "piping" is not a native Ruby syntax feature, rather than a method call in disguise (e.g: `"foo".|(:upcase)`), the underlying `PiedPiper` class, which wraps the initial object (e.g: `"foo"`) and on which the pipe functionality is called, is just a wrapper for the initial object which handles piping logic.
 
-Everytime you finished a pipe transformation you create a new object of class `PiedPiper`, which wraps the mutated inital object again (e.g: from `"foo"` to `"FOO"`).
+Everytime you transformed an object through a pipe you create a new object of class `PiedPiper`, which wraps the mutated inital object again (e.g: from `"foo"` to `"FOO"`).
 
-We can build pipe-chains this way, but at the end of each pipe-chain, the piped object has to be "unwrapped" again by ending the pipe-chain with the `.end` method on the pipe object or by just writing `PiedPiper::EndOfPipe` or if you have required `pied_piper/kernel` you can just write `p_end`.
+This way, we can build pipe-chains of arbitrary length, but at the end of each pipe-chain, the piped object has to be "unwrapped" again by some kind of "terminator" object.
+
+This happens by "terminating" the pipe-chain with the `.end` method, which is defined on every piped object, or by just writing `PiedPiper::EndOfPipe` or if you have required `pied_piper/kernel` you can just write `p_end`.
 
 ```ruby
 p = piper("rats and kids")
@@ -101,13 +107,46 @@ p | :upcase | p_end # when PiedPiper::Kernel was required
 
 It would be possible to avoid writing `p.end` at the end of the chain, by implementing the gem in another way, but that would have included to monkey-patch existing Ruby classes, since the `|` method is already implemented by some of them.
 
-I decided against that, since I only wanted to add pipe functionality and not alter existing behaviour in any way.
+I decided against that, since I only wanted to add pipe functionality and not alter existing Ruby behaviour in any way.
 
 Thus the `PiedPiper` class was born.
 
-If you want to add pipe functionality everywhere, we already talked about how to implement it above under "Usage".
+### Ruby and its Kernel module
 
-This will make you use pipe functionality everywhere with the least amount of side-effects, since it only adds and doesn't alter existing behaviour.
+If you want to add pipe functionality everywhere, we already talked about how to implement it above by requiring `pied_piper/kernel".
+
+This will provide pipe functionality on every object which has `Object` in one of its superclasses ( thus practically every object in Ruby besides `BasicObject` ) with the least amount of monkey-patching/side-effects, since we only add one Kernel method named `piper` and don't alter existing behaviour.
+
+In case you didn't know:
+
+`Object` includes `Kernel` as a module.
+
+Methods who are intended to be globally available, like `puts` and `gets`, and who aren't intended to be available with an explicit receiver like `"foo".puts` are defined as private instance methods on `Kernel`.
+
+Private instance methods can only be called with an implicit receiver (implicit self) in Ruby.
+
+That's why things like this work, because were always "inside" an object:
+
+```ruby
+puts self
+# main
+# nil
+
+# implicit receiver for puts
+puts "foo"
+```
+
+but this doesn't:
+
+```ruby
+# explicit receiver for puts
+self.puts "foo"
+# => NoMethodError: private method `puts' called for main:Object
+```
+
+So if you want to provide functionality that's available everywhere like `puts` the usual approach is to define a private instance method on Kernel.
+
+That's what has been done with the `piper` and `p_end` method :-)
 
 ### Array Pipes
 
