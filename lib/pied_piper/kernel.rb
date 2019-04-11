@@ -1,3 +1,5 @@
+require 'pied_piper'
+
 module PiedPiper::Kernel
   ::Kernel.class_eval do
     def piper(obj)
