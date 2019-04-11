@@ -162,7 +162,7 @@ self.puts "foo"
 # => NoMethodError: private method `puts' called for main:Object
 ```
 
-So if you want to provide functionality that's available everywhere like `puts`, but cannot be called on an object, the usual approach is to define a private instance method on Kernel.
+So if you want to provide functionality that should be available everywhere like `puts`, but should not be called on an object for example like `"bar".puts("foo")` or `[1,2].puts("foo")` ( because that wouldn't make sense if all these methods do is the same, putting something on the console, where a simple `puts "foo"` without receiver would be sufficient ), the usual approach is to define a private instance method on Kernel.
 
 That's what has been done with the `piper` and `p_end` methods and can be seen in the source [here](https://github.com/christophweegen/pied-piper/blob/master/lib/pied_piper/kernel.rb) :-)
 
