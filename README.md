@@ -6,13 +6,15 @@ The inspiration for this gem were `|>` pipes and functional programming in [Elix
 
 After trying to introduce the same `|>` pipe operator in Ruby, which I found out isn't possible due to syntactic reasons ( without hacking the underlying C code ), I settled for another well-known pipe operator, the `|` Unix pipe operator.
 
-If you want to read about the inspiration for the name `PiedPiper`, it's an old german fairy tale, the [Pied Piper of Hamelin](https://en.wikipedia.org/wiki/Pied_Piper_of_Hamelin), of a guy who played pipe and hypnotized and lured all children out of town with his music and they were never be seen again.
+If you want to read about the inspiration for the name `PiedPiper`, it's an old german fairy tale, the [Pied Piper of Hamelin](https://en.wikipedia.org/wiki/Pied_Piper_of_Hamelin), a guy who played pipe and hypnotized and lured all children out of town with his music and they were never be seen again.
+
+Another thing worth seeing, regarding "Pied Piper" and coding, is [Silicon Valley - Company Name](https://www.youtube.com/watch?v=QJ70b-WRHlU). It's hilarious :-D ( Thanks, Michael! )
 
 Despite the word "pipe" there's also another common thing between the fairy tale and pipes in this gem:
 
 There's a "piper" object who lures "children" (other objects) away ( through pipes ) until they never be seen again ( are transformed into other objects ).  :-)
 
-If you never worked with pipes, this little analogy may help to understand what's happening.
+If you never worked with pipes, this little analogy may help, to understand what's happening.
 
 Have fun with PiedPiper and don't let him lure you away... :-)
 
