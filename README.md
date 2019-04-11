@@ -113,40 +113,58 @@ Thus the `PiedPiper` class was born.
 
 ### Ruby and its Kernel module
 
-If you want to add pipe functionality everywhere, we already talked about how to implement it above by requiring `pied_piper/kernel".
+If you want to add pipe functionality everywhere, we already talked about how to implement it above by requiring `pied_piper/kernel`.
 
-This will provide pipe functionality on every object which has `Object` in one of its superclasses ( thus practically every object in Ruby besides `BasicObject` ) with the least amount of monkey-patching/side-effects, since we only add one Kernel method named `piper` and don't alter existing behaviour.
+This will provide pipe functionality on every object which has `Object` in one of its superclasses ( thus practically every object in Ruby besides `BasicObject` which is the highest class in Ruby's inheritance hierarchy ) with the least amount of monkey-patching/side-effects, since we only add one `Kernel` method named `piper` and don't alter existing behaviour.
 
 In case you didn't know:
 
 `Object` includes `Kernel` as a module.
 
+Included modules can be seen in Ruby like this:
+
+```ruby
+Object.included_modules
+# => [Kernel]
+```
+
+If you want to see the whole inheritance chain of a class (with superclasses and included/prepended modules) you can do this:
+
+```ruby
+Object.ancestors
+# => [Object, Kernel, BasicObject]
+```
+
+Since Object `includes Kernel`, `Kernel` follows after `Object`.
+
+If `Object` would `prepend Kernel`, `Kernel` would be before `Object`.
+
 Methods who are intended to be globally available, like `puts` and `gets`, and who aren't intended to be available with an explicit receiver like `"foo".puts` are defined as private instance methods on `Kernel`.
 
-Private instance methods can only be called with an implicit receiver (implicit self) in Ruby.
+All private instance methods can only be called with an implicit receiver (implicit self) in Ruby.
 
-That's why things like this work, because were always "inside" an object:
+That's why things like this work with an implicit receiver/self, because were always "inside" an object:
 
 ```ruby
 puts self
 # main
 # nil
 
-# implicit receiver for puts
+# implicit receiver/self for puts
 puts "foo"
 ```
 
-but this doesn't:
+But this doesn't, since we call it on an explicit receiver:
 
 ```ruby
-# explicit receiver for puts
+# explicit receiver/self for puts
 self.puts "foo"
 # => NoMethodError: private method `puts' called for main:Object
 ```
 
-So if you want to provide functionality that's available everywhere like `puts` the usual approach is to define a private instance method on Kernel.
+So if you want to provide functionality that's available everywhere like `puts` but cannot be called on an object, the usual approach is to define a private instance method on Kernel.
 
-That's what has been done with the `piper` and `p_end` method :-)
+That's what has been done with the `piper` and `p_end` methods and can be seen in the source [here](https://github.com/christophweegen/pied-piper/blob/master/lib/pied_piper/kernel.rb) :-)
 
 ### Array Pipes
 
